@@ -88,7 +88,7 @@ export const useBlockNavigation = <R = never>(
         options?: Parameters<typeof Stream.flatMap>[2],
       ) =>
         Stream.filterMap(computed.changes, (blocking) => blocking).pipe(
-          Stream.mapEffect((blocking) => handler(blocking), options),
+          Stream.flatMap(handler, options),
           Stream.runDrain,
         ),
     })
