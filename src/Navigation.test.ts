@@ -44,65 +44,55 @@ describe(__filename, () => {
       const url = new URL('https://example.com/foo/1')
       const state = { x: Math.random() }
       return Effect.gen(function* () {
-        const {
-          back,
-          beforeNavigation,
-          currentEntry,
-          entries,
-          forward,
-          navigate,
-          onNavigation,
-          traverseTo,
-        } = yield* Navigation.Navigation
-        const initial = yield* currentEntry
+        const initial = yield* Navigation.CurrentEntry
 
         expect(isUuid(initial.id)).toEqual(true)
         expect(isUuid(initial.key)).toEqual(true)
         expect(initial.url).toEqual(url)
         expect(initial.state).toEqual(state)
         expect(initial.sameDocument).toEqual(true)
-        expect(yield* entries).toEqual([initial])
+        expect(yield* Navigation.Entries).toEqual([initial])
 
         const count = yield* LazyRef.of(0)
 
-        yield* beforeNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x + 10)))
-        yield* onNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x * 2)))
+        yield* Navigation.beforeNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x + 10)))
+        yield* Navigation.onNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x * 2)))
 
-        const second = yield* navigate('/foo/2')
+        const second = yield* Navigation. navigate('/foo/2')
 
         expect(second.url).toEqual(new URL('/foo/2', url.origin))
         expect(second.state).toEqual(undefined)
         expect(second.sameDocument).toEqual(true)
-        equalDestinations(yield* entries, [initial, second])
+        equalDestinations(yield* Navigation.Entries, [initial, second])
 
         expect(yield* count).toEqual(20)
 
-        equalDestination(yield* back(), initial)
-        equalDestination(yield* forward(), second)
+        equalDestination(yield* Navigation.back(), initial)
+        equalDestination(yield* Navigation.forward(), second)
 
         expect(yield* count).toEqual(140)
 
-        const third = yield* navigate('/foo/3')
+        const third = yield* Navigation.  navigate('/foo/3')
 
         expect(third.url).toEqual(new URL('/foo/3', url.origin))
         expect(third.state).toEqual(undefined)
         expect(third.sameDocument).toEqual(true)
-        equalDestinations(yield* entries, [initial, second, third])
+        equalDestinations(yield* Navigation.Entries, [initial, second, third])
 
         expect(yield* count).toEqual(300)
 
-        equalDestination(yield* traverseTo(initial.key), initial)
-        equalDestination(yield* forward(), second)
+        equalDestination(yield* Navigation.traverseTo(initial.key), initial)
+        equalDestination(yield* Navigation.forward(), second)
 
         expect(yield* count).toEqual(1260)
 
         // Test that the maxEntries option is respected
 
-        const fourth = yield* navigate(new URL('/foo/4', url.origin))
-        const fifth = yield* navigate(new URL('/foo/5', url.origin))
-        const sixth = yield* navigate(new URL('/foo/6', url.origin))
+        const fourth = yield* Navigation.navigate(new URL('/foo/4', url.origin))
+        const fifth = yield* Navigation.navigate(new URL('/foo/5', url.origin))
+        const sixth = yield* Navigation.navigate(new URL('/foo/6', url.origin))
 
-        expect(yield* entries).toEqual([fourth, fifth, sixth])
+        expect(yield* Navigation.Entries).toEqual([fourth, fifth, sixth])
       }).pipe(
         Effect.provide(Navigation.initialMemory({ url, state, maxEntries: 3 })),
         Effect.provide(GetRandomValues.CryptoRandom),
@@ -119,55 +109,45 @@ describe(__filename, () => {
       it('manages navigation', async () => {
         const window = makeWindow({ url: url.href }, state)
         const test = Effect.gen(function* (_) {
-          const {
-            back,
-            beforeNavigation,
-            currentEntry,
-            entries,
-            forward,
-            navigate,
-            onNavigation,
-            traverseTo,
-          } = yield* Navigation.Navigation
-          const initial = yield* currentEntry
+          const initial = yield* Navigation.CurrentEntry
 
           expect(isUuid(initial.id)).toEqual(true)
           expect(isUuid(initial.key)).toEqual(true)
           expect(initial.url).toEqual(url)
           expect(initial.state).toEqual(state.__typed__navigation__state__)
           expect(initial.sameDocument).toEqual(true)
-          expect(yield* entries).toEqual([initial])
+          expect(yield* Navigation.Entries).toEqual([initial])
 
           const count = yield* LazyRef.of(0)
 
-          yield* beforeNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x + 10)))
-          yield* onNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x * 2)))
+          yield* Navigation.beforeNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x + 10)))
+          yield* Navigation.onNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x * 2)))
 
-          const second = yield* navigate('/foo/2')
+          const second = yield* Navigation.   navigate('/foo/2')
 
           expect(second.url).toEqual(new URL('/foo/2', url.origin))
           expect(second.state).toEqual(undefined)
           expect(second.sameDocument).toEqual(true)
-          equalDestinations(yield* entries, [initial, second])
+          equalDestinations(yield* Navigation.Entries, [initial, second])
 
           expect(yield* count).toEqual(20)
 
-          equalDestination(yield* back(), initial)
-          equalDestination(yield* forward(), second)
+          equalDestination(yield* Navigation.back(), initial)
+          equalDestination(yield* Navigation.forward(), second)
 
           expect(yield* count).toEqual(140)
 
-          const third = yield* navigate('/foo/3')
+          const third = yield* Navigation.  navigate('/foo/3')
 
           expect(third.url).toEqual(new URL('/foo/3', url.origin))
           expect(third.state).toEqual(undefined)
           expect(third.sameDocument).toEqual(true)
-          equalDestinations(yield* entries, [initial, second, third])
+          equalDestinations(yield* Navigation.Entries, [initial, second, third])
 
           expect(yield* count).toEqual(300)
 
-          equalDestination(yield* traverseTo(initial.key), initial)
-          equalDestination(yield* forward(), second)
+          equalDestination(yield* Navigation.traverseTo(initial.key), initial)
+          equalDestination(yield* Navigation.forward(), second)
 
           expect(yield* count).toEqual(1260)
         }).pipe(
@@ -253,9 +233,7 @@ describe(__filename, () => {
         const window = makeWindow({ url: url.href }, state)
         const test = Effect.gen(function* (_) {
           const { history, location } = window
-          const { currentEntry } = yield* Navigation.Navigation
-
-          const current = yield* currentEntry
+          const current = yield* Navigation.CurrentEntry
 
           // Initializes from History state when possible
           deepStrictEqual(current.key, state.__typed__navigation__key__)
@@ -276,7 +254,7 @@ describe(__filename, () => {
 
           yield* Effect.sleep(1)
 
-          const hashChange = yield* currentEntry
+          const hashChange = yield* Navigation.CurrentEntry
 
           deepStrictEqual(hashChange.key, state.__typed__navigation__key__)
           deepStrictEqual(hashChange.url.hash, '#baz')
@@ -303,14 +281,13 @@ describe(__filename, () => {
 
       it('allows performing redirects', async () => {
         const test = Effect.gen(function* (_) {
-          const navigation = yield* Navigation.Navigation
-          const initial = yield* navigation.currentEntry
+          const initial = yield* Navigation.CurrentEntry
 
           deepStrictEqual(initial.url, url)
 
-          yield* navigation.beforeNavigation((handler) =>
+          yield* Navigation.beforeNavigation((handler) =>
             Effect.gen(function* (_) {
-              const current = yield* navigation.currentEntry
+              const current = yield* Navigation.CurrentEntry
 
               // Runs before the URL has been committed
               deepStrictEqual(current.url, handler.from.url)
@@ -321,12 +298,12 @@ describe(__filename, () => {
 
           yield* Navigation.navigate(url)
 
-          const next = yield* navigation.currentEntry
+          const next = yield* Navigation.CurrentEntry
 
           deepStrictEqual(next.url, redirectUrl)
 
           // Redirects replace the current entry
-          deepStrictEqual(yield* navigation.entries, [next])
+          deepStrictEqual(yield* Navigation.Entries, [next])
         }).pipe(
           Effect.provide(Navigation.initialMemory({ url, state })),
           Effect.provide(GetRandomValues.CryptoRandom),
@@ -338,14 +315,13 @@ describe(__filename, () => {
 
       it('allows canceling navigation', async () => {
         const test = Effect.gen(function* (_) {
-          const navigation = yield* Navigation.Navigation
-          const initial = yield* navigation.currentEntry
+          const initial = yield* Navigation.CurrentEntry
 
           deepStrictEqual(initial.url, url)
 
-          yield* navigation.beforeNavigation((handler) =>
+          yield* Navigation.beforeNavigation((handler) =>
             Effect.gen(function* (_) {
-              const current = yield* navigation.currentEntry
+              const current = yield* Navigation.CurrentEntry
 
               // Runs before the URL has been committed
               deepStrictEqual(current.url, handler.from.url)
@@ -358,11 +334,11 @@ describe(__filename, () => {
 
           yield* Navigation.navigate(redirectUrl)
 
-          const next = yield* navigation.currentEntry
+          const next = yield* Navigation.CurrentEntry
 
           deepStrictEqual(next.url, url)
 
-          deepStrictEqual(yield* navigation.entries, [initial])
+          deepStrictEqual(yield* Navigation.Entries, [initial])
         }).pipe(
           Effect.provide(Navigation.initialMemory({ url, state })),
           Effect.provide(GetRandomValues.CryptoRandom),
@@ -431,8 +407,7 @@ describe(__filename, () => {
 
       it('captures any ongoing transitions', async () => {
         const test = Effect.gen(function* () {
-          const { navigate, transition } = yield* Navigation.Navigation
-          const fiber = yield* transition.changes.pipe(
+          const fiber = yield* Navigation.Transition.pipe(
             Stream.take(2),
             Stream.runCollect,
             Effect.map((_) => Array.from(_)),
@@ -442,7 +417,7 @@ describe(__filename, () => {
           // Allow fiber to start
           yield* Effect.sleep(0)
 
-          yield* navigate(nextUrl)
+          yield* Navigation.navigate(nextUrl)
 
           const events = yield* Effect.fromFiber(fiber)
 
@@ -473,55 +448,45 @@ describe(__filename, () => {
         })
         ;(window as any).navigation = navigation as any
         const test = Effect.gen(function* (_) {
-          const {
-            back,
-            beforeNavigation,
-            currentEntry,
-            entries,
-            forward,
-            navigate,
-            onNavigation,
-            traverseTo,
-          } = yield* Navigation.Navigation
-          const initial = yield* currentEntry
+          const initial = yield* Navigation.CurrentEntry
 
           expect(isUuid(initial.id)).toEqual(true)
           expect(isUuid(initial.key)).toEqual(true)
           expect(initial.url).toEqual(url)
           expect(initial.state).toEqual(state)
           expect(initial.sameDocument).toEqual(true)
-          expect(yield* entries).toEqual([initial])
+          expect(yield* Navigation.Entries).toEqual([initial])
 
           const count = yield* LazyRef.of(0)
 
-          yield* beforeNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x + 10)))
-          yield* onNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x * 2)))
+          yield* Navigation.beforeNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x + 10)))
+          yield* Navigation.onNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x * 2)))
 
-          const second = yield* navigate('/foo/2')
+          const second = yield* Navigation.navigate('/foo/2')
 
           expect(second.url).toEqual(new URL('/foo/2', url.origin))
           expect(second.state).toEqual(undefined)
           expect(second.sameDocument).toEqual(true)
-          equalDestinations(yield* entries, [initial, second])
+          equalDestinations(yield* Navigation.Entries, [initial, second])
 
           expect(yield* count).toEqual(20)
 
-          equalDestination(yield* back(), initial)
-          equalDestination(yield* forward(), second)
+          equalDestination(yield* Navigation.back(), initial)
+          equalDestination(yield* Navigation.forward(), second)
 
           expect(yield* count).toEqual(140)
 
-          const third = yield* navigate('/foo/3')
+          const third = yield* Navigation.  navigate('/foo/3')
 
           expect(third.url).toEqual(new URL('/foo/3', url.origin))
           expect(third.state).toEqual(undefined)
           expect(third.sameDocument).toEqual(true)
-          equalDestinations(yield* entries, [initial, second, third])
+          equalDestinations(yield* Navigation.Entries, [initial, second, third])
 
           expect(yield* count).toEqual(300)
 
-          equalDestination(yield* traverseTo(initial.key), initial)
-          equalDestination(yield* forward(), second)
+          equalDestination(yield* Navigation.traverseTo(initial.key), initial)
+          equalDestination(yield* Navigation.forward(), second)
 
           expect(yield* count).toEqual(1260)
         }).pipe(
@@ -544,19 +509,14 @@ describe(__filename, () => {
         const blockNavigation = yield* Navigation.useBlockNavigation()
         let didBlock = false
 
-        yield* Stream.filterMap(blockNavigation.changes, (_) => _).pipe(
-          Stream.tap((blocking) => {
+        yield* Effect.forkScoped(
+          blockNavigation.whenBlocked((blocking) => {
             didBlock = true
             return blocking.confirm
           }),
-          Stream.runDrain,
-          Effect.forkScoped,
         )
 
-        // Let fiber start
-        yield* Effect.sleep(1)
-
-        yield* Effect.either(Navigation.navigate(nextUrl))
+        yield* Navigation.navigate(nextUrl)
 
         deepStrictEqual(didBlock, true)
 
@@ -575,26 +535,17 @@ describe(__filename, () => {
         const blockNavigation = yield* Navigation.useBlockNavigation()
         let didBlock = false
 
-        yield* blockNavigation.changes.pipe(
-          Stream.runForEach(
-            Option.match({
-              onNone: (): Effect.Effect<unknown> => Effect.void,
-              onSome: (blocking) => {
-                didBlock = true
-                return blocking.cancel
-              },
-            }),
-          ),
-          Effect.forkScoped,
+        yield* Effect.forkScoped(
+          blockNavigation.whenBlocked((blocking) => {
+            didBlock = true
+            return blocking.cancel
+          }),
         )
 
         yield* Navigation.navigate(nextUrl)
 
         deepStrictEqual(didBlock, true)
-
-        const currentEntry = yield* Navigation.CurrentEntry
-
-        deepStrictEqual(currentEntry.url.pathname, '/foo/1')
+        deepStrictEqual(yield* Navigation.CurrentPath, '/foo/1')
       }).pipe(
         Effect.provide(Navigation.initialMemory({ url })),
         Effect.provide(GetRandomValues.CryptoRandom),

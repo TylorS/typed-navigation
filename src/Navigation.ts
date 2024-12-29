@@ -126,6 +126,9 @@ export const reload: (options?: {
 }) => Effect.Effect<Destination, NavigationError, Navigation> = (opts) =>
   Effect.flatMap(Navigation, (nav) => nav.reload(opts))
 
+export const Transition: LazyRef.Computed<Option.Option<TransitionEvent>, never, Navigation> =
+  LazyRef.computedFromTag(Navigation, (nav) => nav.transition)
+
 export function handleRedirect(error: RedirectError) {
   return navigate(error.path, {
     history: 'replace',
@@ -153,3 +156,15 @@ export function isCancelNavigation(e: unknown): e is CancelNavigation {
 }
 
 export const cancelNavigation = Effect.suspend(() => new CancelNavigation())
+
+export function beforeNavigation<R = never, R2 = never>(
+  handler: BeforeNavigationHandler<R, R2>,
+): Effect.Effect<void, never, Navigation | R | R2 | Scope.Scope> {
+  return Effect.flatMap(Navigation, (nav) => nav.beforeNavigation(handler))
+}
+
+export function onNavigation<R = never, R2 = never>(
+  handler: NavigationHandler<R, R2>,
+): Effect.Effect<void, never, Navigation | R | R2 | Scope.Scope> {
+  return Effect.flatMap(Navigation, (nav) => nav.onNavigation(handler))
+}

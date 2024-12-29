@@ -146,7 +146,7 @@ function setupWithNavigation(
 
         for (const [handler, ctx] of eventHandlers) {
           const match = yield* Effect.provide(handler(event), ctx)
-          if (Option.isSome(match)) {
+          if (match !== undefined && Option.isSome(match)) {
             matches.push(Effect.provide(match.value, ctx))
           }
         }

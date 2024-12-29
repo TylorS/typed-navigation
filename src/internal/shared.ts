@@ -68,7 +68,7 @@ export function setupFromModelAndIntent(
         const exit = yield* handler(event).pipe(Effect.provide(ctx), Effect.either)
         if (Either.isRight(exit)) {
           const match = exit.right
-          if (Option.isSome(match)) {
+          if (match !== undefined && Option.isSome(match)) {
             matches.push(Effect.provide(match.value, ctx))
           }
         } else {
@@ -95,7 +95,7 @@ export function setupFromModelAndIntent(
 
       for (const [handler, ctx] of eventHandlers) {
         const match = yield* Effect.provide(handler(event), ctx)
-        if (Option.isSome(match)) {
+        if (match !== undefined && Option.isSome(match)) {
           matches.push(Effect.provide(match.value, ctx))
         }
       }

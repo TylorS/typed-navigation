@@ -1,4 +1,5 @@
 import * as LazyRef from '@typed/lazy-ref'
+import { Stream } from 'effect'
 import * as Data from 'effect/Data'
 import * as Deferred from 'effect/Deferred'
 import * as Effect from 'effect/Effect'
@@ -12,6 +13,10 @@ import { Navigation, redirectToPath } from './Navigation.js'
 
 export interface BlockNavigation extends LazyRef.Computed<Option.Option<Blocking>> {
   readonly isBlocking: LazyRef.Computed<boolean>
+  readonly whenBlocked: <A, E, R>(
+    handler: (blocking: Blocking) => Effect.Effect<A, E, R>,
+    options?: Parameters<typeof Stream.flatMap>[2],
+  ) => Effect.Effect<void, E, R>
 }
 
 export interface Blocking extends TransitionEvent {
@@ -72,14 +77,21 @@ export const useBlockNavigation = <R = never>(
       ),
     )
 
-    const blockNavigation: BlockNavigation = Object.assign(
-      LazyRef.map(blockState, (s) => {
-        return s._tag === 'Blocked' ? Option.some(blockedToBlocking(navigation, s)) : Option.none()
-      }),
-      {
-        isBlocking: LazyRef.map(blockState, (s) => s._tag === 'Blocked'),
-      },
-    )
+    const computed = LazyRef.map(blockState, (s) => {
+      return s._tag === 'Blocked' ? Option.some(blockedToBlocking(navigation, s)) : Option.none()
+    })
+
+    const blockNavigation: BlockNavigation = Object.assign(computed, {
+      isBlocking: LazyRef.map(blockState, (s) => s._tag === 'Blocked'),
+      whenBlocked: <A, E, R>(
+        handler: (blocking: Blocking) => Effect.Effect<A, E, R>,
+        options?: Parameters<typeof Stream.flatMap>[2],
+      ) =>
+        Stream.filterMap(computed.changes, (blocking) => blocking).pipe(
+          Stream.mapEffect((blocking) => handler(blocking), options),
+          Stream.runDrain,
+        ),
+    })
 
     return blockNavigation
   })
