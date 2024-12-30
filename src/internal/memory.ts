@@ -34,23 +34,17 @@ export const memory = (options: MemoryOptions): Layer.Layer<Navigation, never, G
 export function initialMemory(
   options: InitialMemoryOptions,
 ): Layer.Layer<Navigation, never, GetRandomValues> {
-  return Layer.scoped(
-    Navigation,
+  return Layer.unwrapEffect(
     Effect.gen(function* () {
-      const getRandomValues = yield* GetRandomValues
       const origin = options.origin ?? getOriginFromUrl(options.url)
-      const base = options.base ?? '/'
       const destination = yield* makeDestination(getUrl(origin, options.url), options.state, origin)
-      const memoryOptions: MemoryOptions = {
-        ...options,
-        entries: [destination],
-        origin,
-        base,
-        currentIndex: 0,
-      }
-      const modelAndIntent = yield* setupMemory(memoryOptions)
 
-      return setupFromModelAndIntent(modelAndIntent, origin, base, getRandomValues)
+      return memory({
+        ...options,
+        origin,
+        entries: [destination],
+        currentIndex: 0,
+      })
     }),
   )
 }
