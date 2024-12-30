@@ -355,33 +355,19 @@ export function setupFromModelAndIntent(
   const submit = (form: FormSubmit) =>
     Effect.gen(function* () {
       const current = yield* currentEntry
-      const url = form.action ? new URL(getUrl(origin, form.action)) : new URL(current.url)
-      const { method, data } = form
-      const client = yield* HttpClient.HttpClient
-
-      if (method === 'get') {
-        data.forEach((_, key) => {
-          url.searchParams.delete(key)
-          const values = data.getAll(key)
-          for (const value of values) {
-            url.searchParams.append(key, value)
-          }
-        })
-      }
-
-      const request =
-        method === 'get' ? client.get(url) : client.post(url, { body: HttpBody.formData(data) })
-      const response = yield* request.pipe(
+      // Utilize the action URL if provided, otherwise use the current URL
+      const url = form.action ? getUrl(origin, form.action) : current.url
+      // Submit the HTTP request
+      const response = yield* HttpClient[form.method](url, form).pipe(
         Effect.mapErrorCause((cause) => Cause.fail(new FormSubmitError({ cause }))),
       )
 
-      const isRedirect = REDIRECT_STATUS_CODES.has(response.status)
-
-      if (isRedirect) {
+      // If the response is a redirect, navigate to the new URL
+      if (REDIRECT_STATUS_CODES.has(response.status)) {
+        // Get the location header
         const location = Headers.get(response.headers, 'location')
         if (Option.isSome(location)) {
-          const redirectUrl = getUrl(origin, location.value)
-          return [yield* navigate(redirectUrl, form), response] as const
+          return [yield* navigate(getUrl(origin, location.value), form), response] as const
         }
       }
 
