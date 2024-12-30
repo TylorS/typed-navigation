@@ -34,8 +34,39 @@ export const NavigationState = Schema.Struct({
   transition: Schema.OptionFromNullishOr(TransitionEvent, null),
 })
 
-export const getUrl = (origin: string, urlOrPath: string | URL): URL => {
-  return typeof urlOrPath === 'string' ? new URL(urlOrPath, origin) : urlOrPath
+export function getUrl(origin: string, urlOrPath: string | URL, base: string): URL {
+  if (typeof urlOrPath === 'string') {
+    const url = new URL(urlOrPath, origin)
+
+    // If the URL is relative, join it with the base
+    if (isRelativeUrl(urlOrPath)) {
+      url.pathname = joinPath(base, url.pathname)
+    }
+
+    return url
+  }
+
+  return urlOrPath
+}
+
+function isRelativeUrl(url: string) {
+  if (url.includes('://')) return false
+  return true
+}
+
+function joinPath(a: string, b: string) {
+  const aEndsWithSlash = a[a.length - 1] === '/'
+  const bStartsWithSlash = b[0] === '/'
+
+  if (aEndsWithSlash && bStartsWithSlash) {
+    return a + b.slice(1)
+  }
+
+  if (!aEndsWithSlash && !bStartsWithSlash) {
+    return `${a}/${b}`
+  }
+
+  return a + b
 }
 
 export type ModelAndIntent = {
@@ -204,7 +235,7 @@ export function setupFromModelAndIntent(
 
         return from
       } else {
-        const event = yield* makeRedirectEvent(origin, error, from)
+        const event = yield* makeRedirectEvent(origin, error, from, base)
 
         return yield* runNavigationEvent(event, get, set, depth + 1)
       }
@@ -218,7 +249,7 @@ export function setupFromModelAndIntent(
         const history = options?.history ?? 'auto'
         const to = yield* makeOrUpdateDestination(
           state,
-          getUrl(origin, pathOrUrl),
+          getUrl(origin, pathOrUrl, base),
           options?.state,
           origin,
         ).pipe(Effect.provideService(GetRandomValues, getRandomValues))
@@ -356,7 +387,7 @@ export function setupFromModelAndIntent(
     Effect.gen(function* () {
       const current = yield* currentEntry
       // Utilize the action URL if provided, otherwise use the current URL
-      const url = form.action ? getUrl(origin, form.action) : current.url
+      const url = form.action ? getUrl(origin, form.action, base) : current.url
       // Submit the HTTP request
       const response = yield* HttpClient[form.method](url, form).pipe(
         Effect.mapErrorCause((cause) => Cause.fail(new FormSubmitError({ cause }))),
@@ -367,7 +398,7 @@ export function setupFromModelAndIntent(
         // Get the location header
         const location = Headers.get(response.headers, 'location')
         if (Option.isSome(location)) {
-          return [yield* navigate(getUrl(origin, location.value), form), response] as const
+          return [yield* navigate(getUrl(origin, location.value, base), form), response] as const
         }
       }
 
@@ -396,9 +427,14 @@ export function setupFromModelAndIntent(
   return navigation
 }
 
-export function makeRedirectEvent(origin: string, redirect: RedirectError, from: Destination) {
+function makeRedirectEvent(
+  origin: string,
+  redirect: RedirectError,
+  from: Destination,
+  base: string,
+) {
   return Effect.gen(function* () {
-    const url = getUrl(origin, redirect.path)
+    const url = getUrl(origin, redirect.path, base)
     const to = yield* makeDestination(url, redirect.options?.state, origin)
     const event: TransitionEvent = {
       type: 'replace',

@@ -36,12 +36,14 @@ export function initialMemory(
 ): Layer.Layer<Navigation, never, GetRandomValues> {
   return Layer.unwrapEffect(
     Effect.gen(function* () {
-      const origin = options.origin ?? getOriginFromUrl(options.url)
-      const destination = yield* makeDestination(getUrl(origin, options.url), options.state, origin)
+      const origin = getOriginFromUrl(options.url)
+      const base = options.base ?? '/'
+      const destination = yield* makeDestination(getUrl(origin, options.url, base), options.state, origin)
 
       return memory({
         ...options,
         origin,
+        base,
         entries: [destination],
         currentIndex: 0,
       })

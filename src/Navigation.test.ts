@@ -662,6 +662,23 @@ describe(__filename, () => {
       )
     })
   })
+
+  describe('base', () => {
+    const url = new URL('https://example.com/foo/1')
+
+    it.effect('uses the base when navigating relative urls', () => {
+      const test = Effect.gen(function* (_) {
+        const destination = yield* Navigation.navigate('/2')
+        deepStrictEqual(destination.url, new URL('/foo/2', url.origin))
+      })
+
+      return test.pipe(
+        Effect.provide(Navigation.initialMemory({ url, base: '/foo' })),
+        Effect.provide(GetRandomValues.CryptoRandom),
+        Effect.scoped,
+      )
+    })
+  })
 })
 
 function makeWindow(

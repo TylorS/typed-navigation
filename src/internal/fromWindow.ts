@@ -34,14 +34,15 @@ export const fromWindow: (window: Window) => Layer.Layer<Navigation, never, GetR
       const getRandomValues = yield* GetRandomValues
       const { run, runPromise } = yield* scopedRuntime<never>()
       const hasNativeNavigation = !!window.navigation
+      const base = getBaseHref(window)
       const modelAndIntent = yield* hasNativeNavigation
         ? setupWithNavigation(window.navigation, runPromise)
-        : setupWithHistory(window, (event) => run(handleHistoryEvent(event)))
+        : setupWithHistory(window, base, (event) => run(handleHistoryEvent(event)))
 
       const navigation = setupFromModelAndIntent(
         modelAndIntent,
         window.location.origin,
-        getBaseHref(window),
+        base,
         getRandomValues,
         hasNativeNavigation ? () => getNavigationState(window.navigation) : undefined,
       )
@@ -204,11 +205,12 @@ function shouldNotIntercept(navigationEvent: globalThis.NavigationEventMap['navi
 
 function setupWithHistory(
   window: Window,
+  base: string,
   onEvent: (event: HistoryEvent) => void,
 ): Effect.Effect<ModelAndIntent, never, GetRandomValues | Scope.Scope> {
   return Effect.gen(function* () {
     const { location } = window
-    const { getHistoryState, original: history, unpatch } = patchHistory(window, onEvent)
+    const { getHistoryState, original: history, unpatch } = patchHistory(window, onEvent, base)
 
     yield* Effect.addFinalizer(() => unpatch)
 
@@ -298,7 +300,7 @@ type TraverseToEvent = {
   skipCommit: boolean
 }
 
-function patchHistory(window: Window, onEvent: (event: HistoryEvent) => void) {
+function patchHistory(window: Window, onEvent: (event: HistoryEvent) => void, base: string) {
   const { history, location } = window
   const stateDescriptor =
     Object.getOwnPropertyDescriptor(Object.getPrototypeOf(history), 'state') ||
@@ -342,7 +344,7 @@ function patchHistory(window: Window, onEvent: (event: HistoryEvent) => void) {
       onEvent({
         _tag: 'PushState',
         state,
-        url: getUrl(location.origin, url),
+        url: getUrl(location.origin, url, base),
         skipCommit: false,
       })
     } else {
@@ -358,7 +360,7 @@ function patchHistory(window: Window, onEvent: (event: HistoryEvent) => void) {
     onEvent({
       _tag: 'ReplaceState',
       state,
-      url: url ? Option.some(getUrl(location.origin, url)) : Option.none(),
+      url: url ? Option.some(getUrl(location.origin, url, base)) : Option.none(),
       skipCommit: false,
     })
   }
