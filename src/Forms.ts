@@ -1,7 +1,8 @@
+import type { HttpBody } from '@effect/platform'
 import type { Options } from '@effect/platform/HttpClientRequest'
-import { Array, Effect, ParseResult, Schema, SchemaAST } from 'effect'
+import { Array, Effect, ParseResult, Schema, SchemaAST, type Types } from 'effect'
 import type { NavigateOptions } from './NavigateOptions.js'
-import { UrlSearchParams, UrlSearchParamsFromSelf } from './Url.js'
+import { UrlSearchParamsFromSelf } from './Url.js'
 
 export const BlobFromSelf = Schema.instanceOf(globalThis.Blob)
 export type BlobFromSelf = typeof BlobFromSelf.Type
@@ -134,19 +135,21 @@ function structToFormData(struct: Record<string, FormDataEntryValue>): FormData 
   return formData
 }
 
-export interface FormGetSubmit extends Options.NoBody, NavigateOptions {
-  readonly method: 'get'
-  readonly name: string
-  readonly data: URLSearchParams
-  readonly action?: string | URL
-}
+export type FormGetSubmit = Types.Simplify<
+  Options.NoBody &
+    NavigateOptions & {
+      readonly method: 'get'
+      readonly name: string
+      readonly action?: string | URL
+    }
+>
 
-export interface FormPostSubmit extends Options.NoBody, NavigateOptions {
-  readonly method: 'post'
-  readonly name: string
-  readonly data: FormData
-  readonly action?: string | URL
-}
+export type FormPostSubmit = Types.Simplify<
+  Omit<FormGetSubmit, 'method'> & {
+    readonly method: 'post'
+    readonly body?: HttpBody.HttpBody
+  }
+>
 
 export type FormSubmit = FormGetSubmit | FormPostSubmit
 
