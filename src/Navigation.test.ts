@@ -1,3 +1,4 @@
+import { FetchHttpClient, Headers, HttpBody } from '@effect/platform'
 import { describe, expect, it } from '@effect/vitest'
 import { GetRandomValues, isUuid, makeUuid } from '@typed/id'
 import * as LazyRef from '@typed/lazy-ref'
@@ -55,10 +56,14 @@ describe(__filename, () => {
 
         const count = yield* LazyRef.of(0)
 
-        yield* Navigation.beforeNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x + 10)))
-        yield* Navigation.onNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x * 2)))
+        yield* Navigation.beforeNavigation(() =>
+          Effect.succeedSome(LazyRef.update(count, (x) => x + 10)),
+        )
+        yield* Navigation.onNavigation(() =>
+          Effect.succeedSome(LazyRef.update(count, (x) => x * 2)),
+        )
 
-        const second = yield* Navigation. navigate('/foo/2')
+        const second = yield* Navigation.navigate('/foo/2')
 
         expect(second.url).toEqual(new URL('/foo/2', url.origin))
         expect(second.state).toEqual(undefined)
@@ -72,7 +77,7 @@ describe(__filename, () => {
 
         expect(yield* count).toEqual(140)
 
-        const third = yield* Navigation.  navigate('/foo/3')
+        const third = yield* Navigation.navigate('/foo/3')
 
         expect(third.url).toEqual(new URL('/foo/3', url.origin))
         expect(third.state).toEqual(undefined)
@@ -120,10 +125,14 @@ describe(__filename, () => {
 
           const count = yield* LazyRef.of(0)
 
-          yield* Navigation.beforeNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x + 10)))
-          yield* Navigation.onNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x * 2)))
+          yield* Navigation.beforeNavigation(() =>
+            Effect.succeedSome(LazyRef.update(count, (x) => x + 10)),
+          )
+          yield* Navigation.onNavigation(() =>
+            Effect.succeedSome(LazyRef.update(count, (x) => x * 2)),
+          )
 
-          const second = yield* Navigation.   navigate('/foo/2')
+          const second = yield* Navigation.navigate('/foo/2')
 
           expect(second.url).toEqual(new URL('/foo/2', url.origin))
           expect(second.state).toEqual(undefined)
@@ -137,7 +146,7 @@ describe(__filename, () => {
 
           expect(yield* count).toEqual(140)
 
-          const third = yield* Navigation.  navigate('/foo/3')
+          const third = yield* Navigation.navigate('/foo/3')
 
           expect(third.url).toEqual(new URL('/foo/3', url.origin))
           expect(third.state).toEqual(undefined)
@@ -459,8 +468,12 @@ describe(__filename, () => {
 
           const count = yield* LazyRef.of(0)
 
-          yield* Navigation.beforeNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x + 10)))
-          yield* Navigation.onNavigation(() => Effect.succeedSome(LazyRef.update(count, (x) => x * 2)))
+          yield* Navigation.beforeNavigation(() =>
+            Effect.succeedSome(LazyRef.update(count, (x) => x + 10)),
+          )
+          yield* Navigation.onNavigation(() =>
+            Effect.succeedSome(LazyRef.update(count, (x) => x * 2)),
+          )
 
           const second = yield* Navigation.navigate('/foo/2')
 
@@ -476,7 +489,7 @@ describe(__filename, () => {
 
           expect(yield* count).toEqual(140)
 
-          const third = yield* Navigation.  navigate('/foo/3')
+          const third = yield* Navigation.navigate('/foo/3')
 
           expect(third.url).toEqual(new URL('/foo/3', url.origin))
           expect(third.state).toEqual(undefined)
@@ -553,6 +566,100 @@ describe(__filename, () => {
       )
 
       await Effect.runPromise(test)
+    })
+  })
+
+  describe('submit', () => {
+    describe('get', () => {
+      const url = new URL('https://example.com/foo/1')
+      const nextUrl = new URL('https://example.com/bar/42')
+
+      it.effect('intercepts redirects when submitting a form', () =>
+        Effect.gen(function* () {
+          const [destination, response] = yield* Navigation.submit({
+            method: 'get',
+            name: 'foo',
+          })
+
+          deepStrictEqual(destination.url, nextUrl)
+          deepStrictEqual(response.status, 302)
+          deepStrictEqual(Headers.get(response.headers, 'location'), Option.some(nextUrl.href))
+        }).pipe(
+          Effect.provide([Navigation.initialMemory({ url }), FetchHttpClient.layer]),
+          Effect.provide(GetRandomValues.CryptoRandom),
+          Effect.provideService(FetchHttpClient.Fetch, () =>
+            Promise.resolve(
+              new Response(null, { status: 302, headers: { Location: nextUrl.href } }),
+            ),
+          ),
+          Effect.scoped,
+        ),
+      )
+
+      it.effect('ignores non-redirects', () =>
+        Effect.gen(function* () {
+          const [destination, response] = yield* Navigation.submit({
+            method: 'get',
+            name: 'foo',
+          })
+
+          deepStrictEqual(destination.url, url)
+          deepStrictEqual(response.status, 400)
+        }).pipe(
+          Effect.provide([Navigation.initialMemory({ url }), FetchHttpClient.layer]),
+          Effect.provide(GetRandomValues.CryptoRandom),
+          Effect.provideService(FetchHttpClient.Fetch, () =>
+            Promise.resolve(new Response(null, { status: 400 })),
+          ),
+          Effect.scoped,
+        ),
+      )
+    })
+
+    describe('post', () => {
+      const url = new URL('https://example.com/foo/1')
+      const nextUrl = new URL('https://example.com/bar/42')
+
+      it.effect('intercepts redirects when submitting a form', () =>
+        Effect.gen(function* () {
+          const [destination, response] = yield* Navigation.submit({
+            method: 'post',
+            name: 'foo',
+          })
+
+          deepStrictEqual(destination.url, nextUrl)
+          deepStrictEqual(response.status, 302)
+          deepStrictEqual(Headers.get(response.headers, 'location'), Option.some(nextUrl.href))
+        }).pipe(
+          Effect.provide([Navigation.initialMemory({ url }), FetchHttpClient.layer]),
+          Effect.provide(GetRandomValues.CryptoRandom),
+          Effect.provideService(FetchHttpClient.Fetch, () =>
+            Promise.resolve(
+              new Response(null, { status: 302, headers: { Location: nextUrl.href } }),
+            ),
+          ),
+          Effect.scoped,
+        ),
+      )
+
+      it.effect('ignores non-redirects', () =>
+        Effect.gen(function* () {
+          const [destination, response] = yield* Navigation.submit({
+            method: 'post',
+            name: 'foo',
+          })
+
+          deepStrictEqual(destination.url, url)
+          deepStrictEqual(response.status, 400)
+        }).pipe(
+          Effect.provide([Navigation.initialMemory({ url }), FetchHttpClient.layer]),
+          Effect.provide(GetRandomValues.CryptoRandom),
+          Effect.provideService(FetchHttpClient.Fetch, () =>
+            Promise.resolve(new Response(null, { status: 400 })),
+          ),
+          Effect.scoped,
+        ),
+      )
     })
   })
 })
