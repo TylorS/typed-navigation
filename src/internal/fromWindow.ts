@@ -35,8 +35,7 @@ export const fromWindow: (window: Window) => Layer.Layer<Navigation, never, GetR
       const { run, runPromise } = yield* scopedRuntime<never>()
       const hasNativeNavigation = !!window.navigation
       const modelAndIntent = yield* hasNativeNavigation
-        ? // biome-ignore lint/style/noNonNullAssertion: <explanation>
-          setupWithNavigation(window.navigation!, runPromise)
+        ? setupWithNavigation(window.navigation, runPromise)
         : setupWithHistory(window, (event) => run(handleHistoryEvent(event)))
 
       const navigation = setupFromModelAndIntent(
@@ -44,8 +43,7 @@ export const fromWindow: (window: Window) => Layer.Layer<Navigation, never, GetR
         window.location.origin,
         getBaseHref(window),
         getRandomValues,
-        // biome-ignore lint/style/noNonNullAssertion: <explanation>
-        hasNativeNavigation ? () => getNavigationState(window.navigation!) : undefined,
+        hasNativeNavigation ? () => getNavigationState(window.navigation) : undefined,
       )
 
       return navigation

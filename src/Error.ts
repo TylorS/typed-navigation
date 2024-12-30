@@ -14,6 +14,15 @@ export class RedirectError extends Schema.TaggedError<RedirectError>()('Redirect
   static is = Schema.is(RedirectError)
 }
 
-export class CancelNavigation extends Schema.TaggedError<CancelNavigation>()('CancelNavigation', {}) {
+export class CancelNavigation extends Schema.TaggedError<CancelNavigation>()(
+  'CancelNavigation',
+  {},
+) {
   static is = Schema.is(CancelNavigation)
+}
+
+export class FormSubmitError extends Schema.TaggedError<FormSubmitError>()('FormSubmitError', {
+  cause: Schema.Unknown,
+}) {
+  static is = Schema.is(FormSubmitError)
 }

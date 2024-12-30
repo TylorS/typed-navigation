@@ -1,14 +1,21 @@
+import { Headers, HttpBody, HttpClient } from '@effect/platform'
 import { GetRandomValues, makeUuid, type Uuid } from '@typed/id'
 import * as LazyRef from '@typed/lazy-ref'
-import { Schema } from 'effect'
+import { Cause, Schema } from 'effect'
 import type * as Context from 'effect/Context'
 import * as Effect from 'effect/Effect'
 import * as Either from 'effect/Either'
 import * as Option from 'effect/Option'
 import type * as Scope from 'effect/Scope'
 import { Destination } from '../Destination.js'
-import type { CancelNavigation, NavigationError, RedirectError } from '../Error.js'
+import {
+  FormSubmitError,
+  type CancelNavigation,
+  type NavigationError,
+  type RedirectError,
+} from '../Error.js'
 import { TransitionEvent, type NavigationEvent } from '../Event.js'
+import type { FormSubmit } from '../Forms.js'
 import type { BeforeNavigationHandler, NavigationHandler } from '../Handler.js'
 import type { Commit } from '../Layer.js'
 import type { NavigateOptions } from '../NavigateOptions.js'
@@ -44,6 +51,8 @@ export type ModelAndIntent = {
 
   readonly commit: Commit
 }
+
+const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308])
 
 export function setupFromModelAndIntent(
   modelAndIntent: ModelAndIntent,
@@ -134,7 +143,7 @@ export function setupFromModelAndIntent(
         yield* commit(to, beforeEvent)
       }
 
-      if (newNavigationState) {
+      if (newNavigationState !== undefined) {
         const { entries, index } = yield* set(newNavigationState())
 
         return entries[index]
@@ -343,6 +352,42 @@ export function setupFromModelAndIntent(
       }),
     )
 
+  const submit = (form: FormSubmit) =>
+    Effect.gen(function* () {
+      const current = yield* currentEntry
+      const url = form.action ? new URL(getUrl(origin, form.action)) : new URL(current.url)
+      const { method, data } = form
+      const client = yield* HttpClient.HttpClient
+
+      if (method === 'get') {
+        data.forEach((_, key) => {
+          url.searchParams.delete(key)
+          const values = data.getAll(key)
+          for (const value of values) {
+            url.searchParams.append(key, value)
+          }
+        })
+      }
+
+      const request =
+        method === 'get' ? client.get(url) : client.post(url, { body: HttpBody.formData(data) })
+      const response = yield* request.pipe(
+        Effect.mapErrorCause((cause) => Cause.fail(new FormSubmitError({ cause }))),
+      )
+
+      const isRedirect = REDIRECT_STATUS_CODES.has(response.status)
+
+      if (isRedirect) {
+        const location = Headers.get(response.headers, 'location')
+        if (Option.isSome(location)) {
+          const redirectUrl = getUrl(origin, location.value)
+          return [yield* navigate(redirectUrl, form), response] as const
+        }
+      }
+
+      return [current, response] as const
+    })
+
   const navigation = {
     back,
     base,
@@ -359,6 +404,7 @@ export function setupFromModelAndIntent(
     transition,
     traverseTo,
     updateCurrentEntry,
+    submit,
   } satisfies Navigation
 
   return navigation

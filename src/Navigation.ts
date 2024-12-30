@@ -1,10 +1,13 @@
+import type { HttpClientResponse } from '@effect/platform'
+import type { HttpClient } from '@effect/platform/HttpClient'
 import * as LazyRef from '@typed/lazy-ref'
 import { Context, Effect, type Option, type Scope } from 'effect'
 import type { Destination } from './Destination.js'
-import { CancelNavigation, NavigationError, RedirectError } from './Error.js'
+import { CancelNavigation, type FormSubmitError, NavigationError, RedirectError } from './Error.js'
+import type { TransitionEvent } from './Event.js'
+import type { FormSubmit } from './Forms.js'
 import type { BeforeNavigationHandler, NavigationHandler } from './Handler.js'
 import type { NavigateOptions } from './NavigateOptions.js'
-import type { TransitionEvent } from './Event.js'
 
 export interface Navigation {
   readonly origin: string
@@ -58,6 +61,14 @@ export interface Navigation {
   readonly onNavigation: <R = never, R2 = never>(
     handler: NavigationHandler<R, R2>,
   ) => Effect.Effect<void, never, R | R2 | Scope.Scope>
+
+  readonly submit: (
+    form: FormSubmit,
+  ) => Effect.Effect<
+    readonly [Destination, HttpClientResponse.HttpClientResponse],
+    NavigationError | FormSubmitError,
+    Navigation | HttpClient | Scope.Scope
+  >
 }
 
 export const Navigation = Context.GenericTag<Navigation>('@typed/Navigation')
@@ -126,8 +137,11 @@ export const reload: (options?: {
 }) => Effect.Effect<Destination, NavigationError, Navigation> = (opts) =>
   Effect.flatMap(Navigation, (nav) => nav.reload(opts))
 
-export const Transition: LazyRef.Computed<Option.Option<TransitionEvent>, never, Navigation> =
-  LazyRef.computedFromTag(Navigation, (nav) => nav.transition)
+export const Transition: LazyRef.Computed<
+  Option.Option<TransitionEvent>,
+  never,
+  Navigation
+> = LazyRef.computedFromTag(Navigation, (nav) => nav.transition)
 
 export function handleRedirect(error: RedirectError) {
   return navigate(error.path, {
@@ -167,4 +181,14 @@ export function onNavigation<R = never, R2 = never>(
   handler: NavigationHandler<R, R2>,
 ): Effect.Effect<void, never, Navigation | R | R2 | Scope.Scope> {
   return Effect.flatMap(Navigation, (nav) => nav.onNavigation(handler))
+}
+
+export function submit(
+  form: FormSubmit,
+): Effect.Effect<
+  readonly [Destination, HttpClientResponse.HttpClientResponse],
+  NavigationError | FormSubmitError,
+  Navigation | HttpClient | Scope.Scope
+> {
+  return Effect.flatMap(Navigation, (nav) => nav.submit(form))
 }
