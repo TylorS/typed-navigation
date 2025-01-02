@@ -1,4 +1,4 @@
-import { FetchHttpClient, Headers, HttpBody } from '@effect/platform'
+import { FetchHttpClient, Headers } from '@effect/platform'
 import { describe, expect, it } from '@effect/vitest'
 import { GetRandomValues, isUuid, makeUuid } from '@typed/id'
 import * as LazyRef from '@typed/lazy-ref'
