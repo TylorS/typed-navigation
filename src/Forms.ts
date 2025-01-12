@@ -1,6 +1,11 @@
 import type { HttpBody } from '@effect/platform'
 import type { Options } from '@effect/platform/HttpClientRequest'
-import { Array, Effect, ParseResult, Schema, SchemaAST, type Types } from 'effect'
+import * as Array from 'effect/Array'
+import * as Effect from 'effect/Effect'
+import * as ParseResult from 'effect/ParseResult'
+import * as Schema from 'effect/Schema'
+import * as SchemaAST from 'effect/SchemaAST'
+import type * as Types from 'effect/Types'
 import type { NavigateOptions } from './NavigateOptions.js'
 import { UrlSearchParamsFromSelf } from './Url.js'
 

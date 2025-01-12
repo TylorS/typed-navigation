@@ -1,4 +1,4 @@
-import { Schema } from 'effect'
+import * as Schema from 'effect/Schema'
 import { Url } from './Url.js'
 
 export class NavigationError extends Schema.TaggedError<NavigationError>()('NavigationError', {

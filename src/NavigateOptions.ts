@@ -1,4 +1,4 @@
-import { Schema } from 'effect'
+import * as Schema from 'effect/Schema'
 
 export const NavigateOptions = Schema.Struct({
   history: Schema.optional(Schema.Union(Schema.Literal('replace', 'push', 'auto'))),

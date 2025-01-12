@@ -1,6 +1,7 @@
-import type { Effect, Option } from 'effect'
+import type * as Effect from 'effect/Effect'
+import type * as Option from 'effect/Option'
 import type { CancelNavigation, RedirectError } from './Error.js'
-import type { TransitionEvent, NavigationEvent } from './Event.js'
+import type { NavigationEvent, TransitionEvent } from './Event.js'
 
 export type BeforeNavigationHandler<R, R2> = (event: TransitionEvent) => Effect.Effect<
   // biome-ignore lint/suspicious/noConfusingVoidType: <explanation>

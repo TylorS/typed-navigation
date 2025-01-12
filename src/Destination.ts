@@ -1,4 +1,4 @@
-import { Schema } from 'effect'
+import * as Schema from 'effect/Schema'
 import { Url } from './Url.js'
 
 export const Destination = Schema.Struct({

@@ -1,4 +1,6 @@
-import { Effect, ParseResult, Schema } from 'effect'
+import * as Effect from 'effect/Effect'
+import * as ParseResult from 'effect/ParseResult'
+import * as Schema from 'effect/Schema'
 
 export const UrlFromSelf = Schema.instanceOf(URL).annotations({
   equivalence: () => (a, b) => a.href === b.href,

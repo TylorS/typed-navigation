@@ -1,6 +1,5 @@
-import { Schema } from 'effect'
+import * as Schema from 'effect/Schema'
 import { Destination } from './Destination.js'
-import { FormData } from './Forms.js'
 import { NavigationType } from './NavigationType.js'
 import { ProposedDestination } from './ProposedDestination.js'
 
