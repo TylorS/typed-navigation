@@ -1,4 +1,4 @@
-import { GetRandomValues, Uuid } from '@typed/id'
+import { GetRandomValues, Uuid4 } from '@typed/id'
 import * as LazyRef from '@typed/lazy-ref'
 import { Schema } from 'effect'
 import * as Context from 'effect/Context'
@@ -179,8 +179,8 @@ function nativeEntryToDestination(
   >,
 ): Destination {
   return {
-    id: Uuid.make(entry.id),
-    key: Uuid.make(entry.key),
+    id: Uuid4.make(entry.id),
+    key: Uuid4.make(entry.key),
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
     url: new URL(entry.url!),
     state: entry.getState(),
@@ -295,7 +295,7 @@ type ReplaceStateEvent = {
 type TraverseEvent = { _tag: 'Traverse'; delta: number; skipCommit: boolean }
 type TraverseToEvent = {
   _tag: 'TraverseTo'
-  key: Uuid
+  key: Uuid4
   state: unknown
   skipCommit: boolean
 }

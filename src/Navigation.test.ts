@@ -1,6 +1,7 @@
-import { FetchHttpClient, Headers } from '@effect/platform'
+import * as FetchHttpClient from '@effect/platform/FetchHttpClient'
+import * as Headers from '@effect/platform/Headers'
 import { describe, expect, it } from '@effect/vitest'
-import { GetRandomValues, isUuid, makeUuid } from '@typed/id'
+import { GetRandomValues, isUuid4, makeUuid4 } from '@typed/id'
 import * as LazyRef from '@typed/lazy-ref'
 import { Cause, Effect, Exit, Stream } from 'effect'
 import * as Option from 'effect/Option'
@@ -27,11 +28,11 @@ const equalDestinations = (
 
 const makePatchedState = (state: unknown): PatchedState => {
   return {
-    __typed__navigation__id__: makeUuid.pipe(
+    __typed__navigation__id__: makeUuid4.pipe(
       Effect.provide(GetRandomValues.CryptoRandom),
       Effect.runSync,
     ),
-    __typed__navigation__key__: makeUuid.pipe(
+    __typed__navigation__key__: makeUuid4.pipe(
       Effect.provide(GetRandomValues.CryptoRandom),
       Effect.runSync,
     ),
@@ -47,8 +48,8 @@ describe(__filename, () => {
       return Effect.gen(function* () {
         const initial = yield* Navigation.CurrentEntry
 
-        expect(isUuid(initial.id)).toEqual(true)
-        expect(isUuid(initial.key)).toEqual(true)
+        expect(isUuid4(initial.id)).toEqual(true)
+        expect(isUuid4(initial.key)).toEqual(true)
         expect(initial.url).toEqual(url)
         expect(initial.state).toEqual(state)
         expect(initial.sameDocument).toEqual(true)
@@ -116,8 +117,8 @@ describe(__filename, () => {
         const test = Effect.gen(function* (_) {
           const initial = yield* Navigation.CurrentEntry
 
-          expect(isUuid(initial.id)).toEqual(true)
-          expect(isUuid(initial.key)).toEqual(true)
+          expect(isUuid4(initial.id)).toEqual(true)
+          expect(isUuid4(initial.key)).toEqual(true)
           expect(initial.url).toEqual(url)
           expect(initial.state).toEqual(state.__typed__navigation__state__)
           expect(initial.sameDocument).toEqual(true)
@@ -459,8 +460,8 @@ describe(__filename, () => {
         const test = Effect.gen(function* (_) {
           const initial = yield* Navigation.CurrentEntry
 
-          expect(isUuid(initial.id)).toEqual(true)
-          expect(isUuid(initial.key)).toEqual(true)
+          expect(isUuid4(initial.id)).toEqual(true)
+          expect(isUuid4(initial.key)).toEqual(true)
           expect(initial.url).toEqual(url)
           expect(initial.state).toEqual(state)
           expect(initial.sameDocument).toEqual(true)

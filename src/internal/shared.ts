@@ -1,5 +1,6 @@
-import { Headers, HttpBody, HttpClient } from '@effect/platform'
-import { GetRandomValues, makeUuid, type Uuid } from '@typed/id'
+import * as Headers from '@effect/platform/Headers'
+import * as HttpClient from '@effect/platform/HttpClient'
+import { GetRandomValues, makeUuid4, type Uuid4 } from '@typed/id'
 import * as LazyRef from '@typed/lazy-ref'
 import { Cause, Schema } from 'effect'
 import type * as Context from 'effect/Context'
@@ -281,7 +282,7 @@ export function setupFromModelAndIntent(
 
         if (nextIndex === -1) return from
 
-        const id = yield* makeUuid.pipe(Effect.provideService(GetRandomValues, getRandomValues))
+        const id = yield* makeUuid4.pipe(Effect.provideService(GetRandomValues, getRandomValues))
         const to = { ...entries[nextIndex], id }
         const delta = nextIndex - index
         const event: TransitionEvent = {
@@ -459,7 +460,7 @@ export function makeOrUpdateDestination(
     const isSameOriginAndPath =
       url.origin === current.url.origin && url.pathname === current.url.pathname
     if (isSameOriginAndPath) {
-      const id = yield* makeUuid
+      const id = yield* makeUuid4
       const destination: Destination = {
         id,
         key: current.key,
@@ -489,8 +490,8 @@ export function makeDestination(url: URL, state: unknown, origin: string) {
       return destination
     }
 
-    const id = yield* makeUuid
-    const key = yield* makeUuid
+    const id = yield* makeUuid4
+    const key = yield* makeUuid4
 
     const destination: Destination = {
       id,
@@ -506,8 +507,8 @@ export function makeDestination(url: URL, state: unknown, origin: string) {
 
 export function upgradeProposedDestination(proposed: ProposedDestination) {
   return Effect.gen(function* () {
-    const id = yield* makeUuid
-    const key = yield* makeUuid
+    const id = yield* makeUuid4
+    const key = yield* makeUuid4
 
     const destination: Destination = {
       id,
@@ -522,8 +523,8 @@ export function upgradeProposedDestination(proposed: ProposedDestination) {
 }
 
 export type PatchedState = {
-  readonly __typed__navigation__id__: Uuid
-  readonly __typed__navigation__key__: Uuid
+  readonly __typed__navigation__id__: Uuid4
+  readonly __typed__navigation__key__: Uuid4
   readonly __typed__navigation__state__: unknown
 }
 
